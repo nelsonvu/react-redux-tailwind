@@ -1,0 +1,9 @@
+#root {
+  background-color: #f5f5f5;
+  --primary-color: #0095ff;
+  --secondary-color: #4a85f6;
+
+  --font-primary: 'Helvetica', 'Arial', 'sans-serif';
+
+  font-family: var(--font-primary);
+}

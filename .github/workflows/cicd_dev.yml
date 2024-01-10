@@ -1,0 +1,51 @@
+name: Dev CICD
+
+on:
+  push:
+    branches: [dev]
+
+env:
+  DOCKER_USER: ${{secrets.DOCKER_USER}}
+  DOCKER_PASSWORD: ${{secrets.DOCKER_PASSWORD}}
+  DEV_REPO_NAME: ${{secrets.DEV_REPO_NAME}}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    environment:
+      name: dev
+    strategy:
+      matrix:
+        node-version: [16.x]
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v1
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: Read version from package.json
+        id: version
+        run: echo "::set-output name=version::$(node -p "require('./package.json').version")"
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@f4ef78c080cd8ba55a85445d5b36e214a81df20a
+        with:
+          username: ${{ env.DOCKER_USER }}
+          password: ${{ env.DOCKER_PASSWORD }}
+
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@9ec57ed1fcdbf14dcef7dfbe97b2010124a938b7
+        with:
+          images: ${{ env.DOCKER_USER }}/${{ env.DEV_REPO_NAME }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@3b5e8027fcad23fda98b2e3ac259d8d67585f671
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: ${{ env.DOCKER_USER }}/${{ env.DEV_REPO_NAME }}:${{ steps.version.outputs.version }}
+          labels: ${{ steps.meta.outputs.labels }}
